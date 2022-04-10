@@ -1,0 +1,14 @@
+name: CatSense
+version: '${version}'
+main: top.mrxiaom.catsense.CatSense
+depend:
+  - Residence
+  - Vault
+  - PlaceholderAPI
+commands:
+  catsense:
+    description: awa
+  ores:
+    description: awa
+  locks:
+    description: awa
