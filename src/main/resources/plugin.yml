@@ -1,6 +1,7 @@
 name: CatSense
 version: '${version}'
 main: top.mrxiaom.catsense.CatSense
+api-version: 1.13
 depend:
   - Residence
   - Vault
