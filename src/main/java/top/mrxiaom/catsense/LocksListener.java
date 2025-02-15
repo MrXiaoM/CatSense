@@ -83,7 +83,7 @@ public class LocksListener implements Listener {
 
     @EventHandler
     public void onSignChange(SignChangeEvent event) {
-        if (event.getBlock().getType().equals(Material.WALL_SIGN)
+        if (event.getBlock().getType().name().contains("WALL_SIGN")
                 && event.getLine(0).equals(header)) {
             Player player = event.getPlayer();
             // 获取贴着牌子的方块另一边是否有收费门牌子
@@ -122,7 +122,7 @@ public class LocksListener implements Listener {
 
 
     private boolean isIronDoor(Block block) {
-        return block != null && (block.getType().equals(Material.IRON_DOOR) || block.getType().equals(Material.IRON_DOOR_BLOCK));
+        return block != null && block.getType().name().contains("IRON_DOOR");
     }
 
     private boolean isLocksSign(Block baseBlock, Block block) {
@@ -246,7 +246,7 @@ public class LocksListener implements Listener {
             return;
         }
         // 点牌子
-        if (block.getType().equals(Material.WALL_SIGN))  {
+        if (block.getType().name().contains("WALL_SIGN"))  {
             if (isLocksSign(null, block)) {
                 Sign sign = (Sign) block.getState();
 
