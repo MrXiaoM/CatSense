@@ -1,8 +1,8 @@
 package top.mrxiaom.catsense;
 
+import com.google.common.collect.Lists;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.block.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -18,6 +18,10 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
+import static top.mrxiaom.catsense.LocksListener.getFace;
 
 public class ContainerListener implements Listener {
     public static class Holder implements InventoryHolder {
@@ -55,12 +59,12 @@ public class ContainerListener implements Listener {
         if (block == null) return false;
         for (BlockFace face : faces) {
             Block temp = block.getRelative(face, 1);
-            if (!temp.getType().equals(Material.WALL_SIGN)) continue;
+            if (!temp.getType().name().contains("WALL_SIGN")) continue;
             Sign sign = (Sign) temp.getState();
             // 要求牌子贴在目标方块上
             // 即 目标方块指向牌子的方向 和 牌子面向的方向 相同
-            BlockFace signFace = ((org.bukkit.material.Sign) sign.getData()).getFacing();
-            if (signFace.equals(face)) {
+            BlockFace signFace = getFace(sign);
+            if (face.equals(signFace)) {
                 for (String line : sign.getLines()) {
                     if (line.equals(signKey)) return true;
                 }
@@ -68,11 +72,11 @@ public class ContainerListener implements Listener {
         }
         return false;
     }
-
+    private static final List<String> containers = Lists.newArrayList(
+            "CHEST", "TRAPPED_CHEST", "DISPENSER", "DROPPER", "HOPPER", "BARREL"
+    );
     public boolean isTargetContainer(Block block) {
-        return block.getType().equals(Material.CHEST) || block.getType().equals(Material.TRAPPED_CHEST)
-                || block.getType().equals(Material.DISPENSER) || block.getType().equals(Material.DROPPER)
-                || block.getType().equals(Material.HOPPER);
+        return containers.contains(block.getType().name());
     }
 
     @EventHandler
@@ -82,7 +86,7 @@ public class ContainerListener implements Listener {
         if (block == null) return;
         Player player = event.getPlayer();
         // 点击牌子
-        if (block.getType().equals(Material.WALL_SIGN) &&
+        if (block.getType().name().contains("WALL_SIGN") &&
                 (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)
                 || (player.isSneaking() && event.getAction().equals(Action.LEFT_CLICK_BLOCK)))) {
             Sign sign = (Sign) block.getState();

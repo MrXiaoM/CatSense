@@ -96,7 +96,7 @@ public class LocksListener implements Listener {
             Player player = event.getPlayer();
             // 获取贴着牌子的方块另一边是否有收费门牌子
             Block oppositeBlock = event.getBlock().getRelative(((org.bukkit.material.Sign) event.getBlock().getState().getData()).getFacing().getOppositeFace(), 2);
-            if(oppositeBlock.getType().equals(Material.WALL_SIGN)) {
+            if(oppositeBlock.getType().name().contains("WALL_SIGN")) {
                 BlockState sign = oppositeBlock.getState();
                 if ((sign instanceof Sign) && ((Sign) sign).getLine(0).equalsIgnoreCase(headerCheck)) {
                     m(player, "error-create-both-side");
@@ -148,22 +148,26 @@ public class LocksListener implements Listener {
         return false;
     }
 
-    @SuppressWarnings({"deprecation"})
-    private boolean isTheSameFacing(Block block, Sign sign) {
+    public static boolean isTheSameFacing(Block block, Sign sign) {
         BlockFace face = block.getFace(sign.getBlock());
         if (face == null) return false;
+        return face.equals(getFace(sign));
+    }
+
+    @SuppressWarnings({"deprecation"})
+    public static BlockFace getFace(Sign sign) {
         if (isPresent("org.bukkit.block.data.BlockData")) {
             BlockData data = sign.getBlockData();
             if (data instanceof org.bukkit.block.data.Directional) {
-                return face.equals(((Directional) data).getFacing());
+                return ((Directional) data).getFacing();
             }
         } else {
             MaterialData data = sign.getData();
             if (data instanceof org.bukkit.material.Directional) {
-                return face.equals(((org.bukkit.material.Directional) data).getFacing());
+                return ((org.bukkit.material.Directional) data).getFacing();
             }
         }
-        return false;
+        return null;
     }
 
     private boolean isInventoryEmpty(Player player) {

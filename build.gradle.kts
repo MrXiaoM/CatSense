@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "top.mrxiaom"
-version = "1.0.1"
+version = "1.0.2"
 
 repositories {
     mavenLocal()
@@ -16,7 +16,7 @@ repositories {
 
 @Suppress("VulnerableLibrariesLocal")
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.20-R0.1-SNAPSHOT")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
     compileOnly("me.clip:placeholderapi:2.11.6")
     implementation("org.jetbrains:annotations:24.0.0")
