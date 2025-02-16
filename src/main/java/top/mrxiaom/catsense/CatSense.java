@@ -152,49 +152,6 @@ public class CatSense extends JavaPlugin {
             locks.n(sender, "help");
             return true;
         }
-        if (label.equalsIgnoreCase("ores") && sender instanceof Player) {
-            Player player = (Player) sender;
-            if (args.length > 0) {
-                if (args[0].equalsIgnoreCase("tpset")) {
-                    ClaimedResidence res = ResidenceApi.getResidenceManager().getByLoc(player.getLocation());
-                    if (res == null) {
-                        player.sendMessage(resTranslate("Language.Invalid.Residence"));
-                        return true;
-                    }
-                    if (!res.isSubzone()) {
-                        // 非子领地设置传送点交给已魔改的领地插件来操作
-                        Bukkit.dispatchCommand(player, "res tpset");
-                        return true;
-                    }
-                    if (!res.getPermissions().playerHas(player, Flags.admin, res.isOwner(player))) {
-                        player.sendMessage(resTranslate("Language.General.NoPermission"));
-                        return true;
-                    }
-                    res.setTpLoc(player, false);
-                    return true;
-                }
-                if (args[0].equalsIgnoreCase("tp")) {
-                    if (args.length < 2) {
-                        // 懒得写帮助直接转接到领地插件
-                        Bukkit.dispatchCommand(player, "res tp");
-                        return true;
-                    }
-                    ClaimedResidence res = ResidenceApi.getResidenceManager().getByName(args[1]);
-                    // 找不到领地或者不是子领地时转接到领地插件
-                    if (res == null || !res.isSubzone()) {
-                        Bukkit.dispatchCommand(player, "res tp " + args[1]);
-                        return true;
-                    }
-                    if (res.getPermissions().playerHas(player, Flags.tp, res.isOwner(player))) {
-                        Location target = res.getTeleportLocation(player);
-                        player.teleport(target);
-                    } else {
-                        player.sendMessage(resTranslate("Language.General.TeleportDeny"));
-                        return true;
-                    }
-                }
-            }
-        }
         return true;
     }
 

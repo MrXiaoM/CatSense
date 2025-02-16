@@ -9,7 +9,5 @@ depend:
 commands:
   catsense:
     description: awa
-  ores:
-    description: awa
   locks:
     description: awa
