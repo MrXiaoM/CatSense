@@ -91,7 +91,9 @@ public class ContainerListener implements Listener {
                 || (player.isSneaking() && event.getAction().equals(Action.LEFT_CLICK_BLOCK)))) {
             Sign sign = (Sign) block.getState();
             // 获取牌子贴着的方块
-            block = block.getRelative(((org.bukkit.material.Sign) sign.getData()).getFacing().getOppositeFace(), 1);
+            BlockFace face = getFace(sign);
+            if (face == null) return;
+            block = block.getRelative(face.getOppositeFace(), 1);
             if (!isTargetContainer(block)) return;
             for (String line : sign.getLines()) {
                 if (line.equals(signKey)) {

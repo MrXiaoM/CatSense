@@ -95,7 +95,9 @@ public class LocksListener implements Listener {
                 && header.equals(event.getLine(0))) {
             Player player = event.getPlayer();
             // 获取贴着牌子的方块另一边是否有收费门牌子
-            Block oppositeBlock = event.getBlock().getRelative(((org.bukkit.material.Sign) event.getBlock().getState().getData()).getFacing().getOppositeFace(), 2);
+            BlockFace signFace = getFace(event.getBlock().getState());
+            if (signFace == null) return;
+            Block oppositeBlock = event.getBlock().getRelative(signFace.getOppositeFace(), 2);
             if(oppositeBlock.getType().name().contains("WALL_SIGN")) {
                 BlockState sign = oppositeBlock.getState();
                 if ((sign instanceof Sign) && ((Sign) sign).getLine(0).equalsIgnoreCase(headerCheck)) {
@@ -155,7 +157,7 @@ public class LocksListener implements Listener {
     }
 
     @SuppressWarnings({"deprecation"})
-    public static BlockFace getFace(Sign sign) {
+    public static BlockFace getFace(BlockState sign) {
         if (isPresent("org.bukkit.block.data.BlockData")) {
             BlockData data = sign.getBlockData();
             if (data instanceof org.bukkit.block.data.Directional) {
