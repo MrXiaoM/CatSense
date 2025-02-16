@@ -39,6 +39,10 @@ tasks {
         }
     }
 
+    jar {
+        destinationDirectory.set(rootProject.file("out"))
+    }
+
     processResources {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         from(sourceSets.main.get().resources.srcDirs) {
