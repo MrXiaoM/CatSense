@@ -6,7 +6,10 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,10 +18,13 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static top.mrxiaom.catsense.CatSense.isPresent;
 
 public class LocksListener implements Listener {
     final CatSense plugin;
@@ -36,12 +42,14 @@ public class LocksListener implements Listener {
     public void reloadConfig() {
         FileConfiguration config = plugin.getConfig();
         header = config.getString("locks.header", "locks");
-        headerCheck = ChatColor.translateAlternateColorCodes('&', config.getString("locks.header-check", "&b&l收费门"));
+        String headerCheckRaw = config.getString("locks.header-check", null);
+        headerCheck = ChatColor.translateAlternateColorCodes('&', headerCheckRaw != null ? headerCheckRaw : "&b&l收费门");
         maxCost = config.getInt("locks.max-cost", 100000);
         taxRate = config.getDouble("locks.tax", 0.01D);
         enterCommands = config.getStringList("locks.enter-commands");
         translate.clear();
-        for (String key : config.getConfigurationSection("locks.message").getKeys(false)) {
+        ConfigurationSection section = config.getConfigurationSection("locks.message");
+        if (section != null) for (String key : section.getKeys(false)) {
             translate.put(key, config.get("locks.message." + key));
         }
     }
@@ -84,7 +92,7 @@ public class LocksListener implements Listener {
     @EventHandler
     public void onSignChange(SignChangeEvent event) {
         if (event.getBlock().getType().name().contains("WALL_SIGN")
-                && event.getLine(0).equals(header)) {
+                && header.equals(event.getLine(0))) {
             Player player = event.getPlayer();
             // 获取贴着牌子的方块另一边是否有收费门牌子
             Block oppositeBlock = event.getBlock().getRelative(((org.bukkit.material.Sign) event.getBlock().getState().getData()).getFacing().getOppositeFace(), 2);
@@ -98,7 +106,8 @@ public class LocksListener implements Listener {
             }
             int cost = -1;
             try {
-                cost = Integer.parseInt(event.getLine(1));
+                String line = event.getLine(1);
+                cost = line == null ? -1 : Integer.parseInt(line);
             } catch (Throwable ignored) {
             }
             if (cost < 0 && cost > maxCost) {
@@ -106,12 +115,12 @@ public class LocksListener implements Listener {
                 event.getBlock().breakNaturally();
                 return;
             }
-            String rawExtraOptions = event.getLine(2);
+            String extra = event.getLine(2);
             // 进 出 空 效
-            boolean isEmptyInv = rawExtraOptions.contains("空");
-            boolean isEmptyEffect = rawExtraOptions.contains("效");
-            boolean canEnter = rawExtraOptions.contains("进");
-            boolean canLeave = rawExtraOptions.contains("出");
+            boolean isEmptyInv = extra != null && extra.contains("空");
+            boolean isEmptyEffect = extra != null && extra.contains("效");
+            boolean canEnter = extra != null && extra.contains("进");
+            boolean canLeave = extra != null && extra.contains("出");
             event.setLine(1, String.valueOf(cost));
             event.setLine(2, ChatColor.translateAlternateColorCodes('&', " &r"+(canEnter ?"&0&l":"&4&m")+"进&r"+(canLeave?"&0&l":"&4&m")+"出&r"+(isEmptyInv?"&0&l":"&4&m")+"空&r"+(isEmptyEffect?"&0&l":"&4&m")+"效&r "));
             event.setLine(3, player.getName());
@@ -127,13 +136,32 @@ public class LocksListener implements Listener {
 
     private boolean isLocksSign(Block baseBlock, Block block) {
         if (block == null) return false;
-        BlockState sign = block.getState();
+        BlockState state = block.getState();
 
-        if (sign instanceof Sign) {
+        if (state instanceof Sign) {
+            Sign sign = (Sign) state;
             // 要求牌子贴在目标方块上
             // 即 目标方块指向牌子的方向 和 牌子面向的方向 相同
-            if (baseBlock == null || baseBlock.getFace(block).equals(((org.bukkit.material.Sign) sign.getData()).getFacing()))
-                return ((Sign) sign).getLine(0).equals(headerCheck);
+            if (baseBlock == null || isTheSameFacing(baseBlock, sign))
+                return headerCheck.equals(sign.getLine(0));
+        }
+        return false;
+    }
+
+    @SuppressWarnings({"deprecation"})
+    private boolean isTheSameFacing(Block block, Sign sign) {
+        BlockFace face = block.getFace(sign.getBlock());
+        if (face == null) return false;
+        if (isPresent("org.bukkit.block.data.BlockData")) {
+            BlockData data = sign.getBlockData();
+            if (data instanceof org.bukkit.block.data.Directional) {
+                return face.equals(((Directional) data).getFacing());
+            }
+        } else {
+            MaterialData data = sign.getData();
+            if (data instanceof org.bukkit.material.Directional) {
+                return face.equals(((org.bukkit.material.Directional) data).getFacing());
+            }
         }
         return false;
     }
@@ -258,12 +286,12 @@ public class LocksListener implements Listener {
                 } catch (Throwable ignored) {
                 }
                 String costStr = cost < 0 ? m("error-value") : String.valueOf(cost);
-                String rawExtraOptions = sign.getLine(2);
+                String extra = sign.getLine(2);
                 // 进 出 空 效
-                String isEmptyInv = m("info-" + rawExtraOptions.contains(ChatColor.COLOR_CHAR + "l空"));
-                String isEmptyEffect = m("info-" + rawExtraOptions.contains(ChatColor.COLOR_CHAR + "l效"));
-                String canEnter = m("info-" + rawExtraOptions.contains(ChatColor.COLOR_CHAR + "l进"));
-                String canLeave = m("info-" + rawExtraOptions.contains(ChatColor.COLOR_CHAR + "l出"));
+                String isEmptyInv = m("info-" + extra.contains(ChatColor.BOLD + "空"));
+                String isEmptyEffect = m("info-" + extra.contains(ChatColor.BOLD + "效"));
+                String canEnter = m("info-" + extra.contains(ChatColor.BOLD + "进"));
+                String canLeave = m("info-" + extra.contains(ChatColor.BOLD + "出"));
 
                 n(player, "info", Pair.of("$owner", ownerStr), Pair.of("$cost", costStr),
                         Pair.of("$canEnter", canEnter), Pair.of("$canLeave", canLeave),

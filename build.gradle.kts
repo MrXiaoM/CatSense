@@ -19,7 +19,7 @@ dependencies {
     compileOnly("org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7")
     compileOnly("me.clip:placeholderapi:2.9.2")
-    compileOnly(files("Residence4.9.0.5.jar"))
+    implementation("org.jetbrains:annotations:24.0.0")
 }
 
 val targetJavaVersion = 8

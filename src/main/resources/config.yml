@@ -2,6 +2,19 @@ prefix: '&7[&b小猫感应&7] &e'
 
 # 箱子、陷阱箱、漏斗、发射器、投掷器上贴的牌子上有这个文字时，右键预览其内容
 container-preview-key: '查看容器'
+container-preview-title: '&3&l查看容器'
+
+help:
+  - '&7[&b小猫感应&7] &e懒怠的小猫&a友情提供插件 &7for &b&o&l零都市'
+  - '&7[&b小猫感应&7] &a/catsense repair &7花费%repair_cost%金币修理物品'
+  - '&7[&b小猫感应&7] &a/catsense clearEnch &7花费%clear_cost%金币清除附魔'
+  - '&7[&b小猫感应&7] &a/locks &7收费门帮助命令'
+help-op:
+  - '&7[&b小猫感应&7] &e懒怠的小猫&a友情提供插件 &7for &b&o&l零都市'
+  - '&7[&b小猫感应&7] &a/catsense repair &7花费%repair_cost%金币修理物品'
+  - '&7[&b小猫感应&7] &a/catsense clearEnch &7花费%clear_cost%金币清除附魔'
+  - '&7[&b小猫感应&7] &a/catsense reload &7重载配置文件'
+  - '&7[&b小猫感应&7] &a/locks &7收费门帮助命令'
 
 # 收费门设置
 locks:

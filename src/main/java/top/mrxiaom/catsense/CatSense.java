@@ -1,22 +1,19 @@
 package top.mrxiaom.catsense;
 
-import com.bekvon.bukkit.residence.Residence;
-import com.bekvon.bukkit.residence.api.ResidenceApi;
-import com.bekvon.bukkit.residence.containers.Flags;
-import com.bekvon.bukkit.residence.protection.ClaimedResidence;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -26,7 +23,8 @@ public class CatSense extends JavaPlugin {
     private Economy econ = null;
     private String prefix;
     private int costRepair;
-    private int costClearEnch;
+    private int costClearEnchants;
+    private List<String> help, helpOp;
 
     @Override
     public void onEnable() {
@@ -47,7 +45,7 @@ public class CatSense extends JavaPlugin {
             return false;
         }
         econ = rsp.getProvider();
-        return econ != null;
+        return true;
     }
 
     public Economy getEconomy() {
@@ -61,9 +59,12 @@ public class CatSense extends JavaPlugin {
     public void reloadConfig() {
         saveDefaultConfig();
         super.reloadConfig();
-        prefix = this.getConfig().getString("prefix", "&7[&b小猫感应&7] &e");
-        costRepair = this.getConfig().getInt("repair.cost", 500);
-        costClearEnch = this.getConfig().getInt("repair.cost-clear-ench", 500);
+        FileConfiguration config = this.getConfig();
+        prefix = config.getString("prefix", "&7[&b小猫感应&7] &e");
+        costRepair = config.getInt("repair.cost", 500);
+        costClearEnchants = config.getInt("repair.cost-clear-ench", 500);
+        help = config.getStringList("help");
+        helpOp = config.getStringList("help-op");
         if (locks == null)
             locks = new LocksListener(this);
         if (container == null)
@@ -72,16 +73,17 @@ public class CatSense extends JavaPlugin {
         container.reloadConfig();
     }
 
-    public String resTranslate(String key) {
-        return ChatColor.translateAlternateColorCodes('&', Residence.getInstance().getLocaleManager().getLocaleConfig().getString(key));
-    }
-
     private void m(Player player, String key) {
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + getConfig().getString(key, "[404:" + key + "]")));
     }
 
+    private boolean isEmpty(ItemStack item) {
+        return item == null || item.getType().equals(Material.AIR);
+    }
+
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    @SuppressWarnings({"deprecation"})
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, String label, String[] args) {
         if (label.equalsIgnoreCase("catsense")) {
             if (args.length == 1) {
                 if (sender.isOp() && args[0].equalsIgnoreCase("reload")) {
@@ -92,8 +94,8 @@ public class CatSense extends JavaPlugin {
                 if (sender instanceof Player) {
                     Player player = (Player) sender;
                     if (args[0].equalsIgnoreCase("repair")) {
-                        ItemStack item = player.getInventory().getItemInMainHand();
-                        if (item == null || item.getType().equals(Material.AIR)) {
+                        ItemStack item = player.getInventory().getItemInHand();
+                        if (isEmpty(item)) {
                             m(player, "repair.message.repair.no-item");
                             return true;
                         }
@@ -113,8 +115,8 @@ public class CatSense extends JavaPlugin {
                         return true;
                     }
                     if (args[0].equalsIgnoreCase("clearEnch")) {
-                        ItemStack item = player.getInventory().getItemInMainHand();
-                        if (item == null || item.getType().equals(Material.AIR)) {
+                        ItemStack item = player.getInventory().getItemInHand();
+                        if (isEmpty(item)) {
                             m(player, "repair.message.clear-ench.no-item");
                             return true;
                         }
@@ -123,11 +125,11 @@ public class CatSense extends JavaPlugin {
                             return true;
                         }
                         double money = econ.getBalance(player);
-                        if (costClearEnch > money) {
+                        if (costClearEnchants > money) {
                             m(player, "repair.message.clear-ench.no-money");
                             return true;
                         }
-                        econ.withdrawPlayer(player, costClearEnch);
+                        econ.withdrawPlayer(player, costClearEnchants);
                         for (Enchantment ench : item.getEnchantments().keySet()) {
                             item.removeEnchantment(ench);
                         }
@@ -137,14 +139,15 @@ public class CatSense extends JavaPlugin {
                     }
                 }
             }
-            sender.sendMessage("§7[§b小猫感应§7] §e懒怠的小猫§a友情提供插件 §7for §b&o§l零都市");
-            sender.sendMessage("§7[§b小猫感应§7] §a/catsense repair §7花费" + costRepair + "金币修理物品");
-            sender.sendMessage("§7[§b小猫感应§7] §a/catsense clearEnch §7花费" + costClearEnch + "金币清除附魔");
-            if (sender.isOp()) sender.sendMessage("§7[§b小猫感应§7] §a/catsense reload §7重载配置文件");
-            sender.sendMessage("§7[§b小猫感应§7] §7(这里 ores 是 Original Residence 的缩写， 不是矿石…)");
-            sender.sendMessage("§7[§b小猫感应§7] §a/ores tpset §7设置领地传送点(不跨服， 支持子领地)");
-            sender.sendMessage("§7[§b小猫感应§7] §a/ores tp <领地> §7传送到领地(不跨服， 支持子领地)");
-            sender.sendMessage("§7[§b小猫感应§7] §a/locks §7收费门帮助命令");
+            List<String> helpMessage = sender.isOp() ? helpOp : help;
+            String strRepairCost = String.valueOf(costRepair);
+            String strClearCost = String.valueOf(costClearEnchants);
+            for (String s : helpMessage) {
+                String s1 = ChatColor.translateAlternateColorCodes('&', s)
+                        .replace("%repair_cost%", strRepairCost)
+                        .replace("%clear_cost%", strClearCost);
+                sender.sendMessage(s1);
+            }
             return true;
         }
         // 收费门帮助
@@ -171,6 +174,15 @@ public class CatSense extends JavaPlugin {
             if (cmd.startsWith("msg:")) {
                 player.sendMessage(cmd.substring("msg:".length()));
             }
+        }
+    }
+
+    public static boolean isPresent(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (Throwable t) {
+            return false;
         }
     }
 }

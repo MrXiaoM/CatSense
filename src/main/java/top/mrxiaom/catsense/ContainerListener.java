@@ -15,13 +15,30 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.DoubleChestInventory;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class ContainerListener implements Listener {
+    public static class Holder implements InventoryHolder {
+        private final Inventory inventory;
+        public Holder(int size, String title) {
+            inventory = Bukkit.createInventory(this, size, title);
+        }
+
+        @NotNull
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+
+        public static boolean is(Inventory inv) {
+            return inv != null && inv.getHolder() instanceof Holder;
+        }
+    }
     CatSense plugin;
     public static final BlockFace[] faces = new BlockFace[] { BlockFace.EAST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST };
-    String signKey;
-    String title = "§1§1§4§3§l容器查看";
+    String signKey, title;
     public ContainerListener(CatSense plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -30,6 +47,8 @@ public class ContainerListener implements Listener {
     public void reloadConfig(){
         FileConfiguration config = plugin.getConfig();
         signKey = config.getString("container-preview-key", "查看容器");
+        String rawTitle = config.getString("container-preview-title", null);
+        title = ChatColor.translateAlternateColorCodes('&', rawTitle != null ? rawTitle : "&3&l查看容器");
     }
 
     public boolean hasCheckFlag(Block block) {
@@ -107,7 +126,10 @@ public class ContainerListener implements Listener {
     }
 
     public void openInv(Player player, int row, ItemStack[] contents) {
-        Inventory inv = Bukkit.createInventory(null, row * 9, title);
+        if (Holder.is(player.getOpenInventory().getTopInventory())) {
+            return;
+        }
+        Inventory inv = new Holder(row * 9, title).getInventory();
         inv.setContents(contents);
         player.closeInventory();
         player.openInventory(inv);
@@ -115,18 +137,24 @@ public class ContainerListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getView().getTitle().equalsIgnoreCase(title)) event.setCancelled(true);
+        if (Holder.is(event.getView().getTopInventory())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
-        if (event.getDestination().getTitle().equalsIgnoreCase(title)
-        || event.getInitiator().getTitle().equalsIgnoreCase(title)
-        || event.getSource().getTitle().equalsIgnoreCase(title)) event.setCancelled(true);
+        if (Holder.is(event.getDestination())
+        || Holder.is(event.getInitiator())
+        || Holder.is(event.getSource())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getView().getTitle().equalsIgnoreCase(title)) event.setCancelled(true);
+        if (Holder.is(event.getView().getTopInventory())) {
+            event.setCancelled(true);
+        }
     }
 }
